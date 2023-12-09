@@ -10,7 +10,14 @@ def find_next_number(line):
             return i
     return -1
 
-def isolate_number(start_loc, line):
+def find_next_special_char(line):
+    for i, char in enumerate(line):
+        if not_period_or_digit(char):
+            return i
+    return -1
+
+# assumes starting from beginning
+def isolate_number_pt1(start_loc, line):
     loc = start_loc+1
     while loc < len(line):
         if line[loc].isdigit():
@@ -20,8 +27,73 @@ def isolate_number(start_loc, line):
 
     return int(line[start_loc:loc]), loc-1
 
+# could be starting from beginning, middle, or end
+# assumes 3-digit num
+def isolate_number_pt2(loc, line):
+    start_loc, end_loc = loc-1, loc+1
+    while start_loc >= 0:
+        if line[start_loc].isdigit():
+            start_loc -= 1
+        else:
+            start_loc += 1
+            break
+    
+    start_loc = max(start_loc, 0)
+    
+    while end_loc < len(line):
+        if line[end_loc].isdigit():
+            end_loc += 1
+        else:
+            end_loc -= 1
+            break
+    
+    end_loc = min(end_loc, len(line)-1)
+
+    return int(line[start_loc:end_loc+1])
+
 def not_period_or_digit(char):
     return not(char.isdigit() or char == '.')
+
+def determine_gear_ratio(prev_line, line, next_line, loc):
+    suspects = ['.' for n in range(9)]
+    if loc > 0:
+        suspects[0] = (prev_line[loc-1])
+        suspects[3] = (line[loc-1])
+        suspects[6] = (next_line[loc-1])
+
+    suspects[1] = (prev_line[loc])
+    suspects[7] = (next_line[loc])
+
+    if loc < len(line)-1:
+        suspects[2] = (prev_line[loc+1])
+        suspects[5] = (line[loc+1])
+        suspects[8] = (next_line[loc+1])
+    
+    if suspects[1].isdigit() and suspects[2].isdigit():
+        suspects[2] = '.'
+    if suspects[0].isdigit() and suspects[1].isdigit():
+        suspects[1] = '.'
+    if suspects[7].isdigit() and suspects[8].isdigit():
+        suspects[8] = '.'
+    if suspects[6].isdigit() and suspects[7].isdigit():
+        suspects[7] = '.'
+    
+    adjacent_nums = []
+
+    for i, suspect in enumerate(suspects):
+        if suspect.isdigit():
+            if i < 3:
+                adjacent_nums.append(isolate_number_pt2(loc+i-1, prev_line))
+            elif i == 3 or i == 5:
+                adjacent_nums.append(isolate_number_pt2(loc+i-4, line))
+            else:
+                adjacent_nums.append(isolate_number_pt2(loc+i-7, next_line))
+    
+    if len(adjacent_nums) == 2:
+        return adjacent_nums[0] * adjacent_nums[1]
+    else:
+        return 0
+
 
 def determine_adjacency(prev_line, line, next_line, start_loc, end_loc):
     left_extreme = max(0, start_loc-1)
@@ -52,7 +124,7 @@ def part1():
             if start_loc == -1:
                 break
             start_loc += prev_end+1
-            num, end_loc = isolate_number(start_loc, line)
+            num, end_loc = isolate_number_pt1(start_loc, line)
             is_part_number = False
             if counter == 0:
                 is_part_number = determine_adjacency('.'*len(line), line, lines[counter+1], start_loc, end_loc)
@@ -75,4 +147,39 @@ def part1():
     
     print('The total is', sum)
 
-part1()
+def part2():
+    data = get_data('input.txt')
+    lines = data.split('\n')
+    counter = 0
+    gear_sum = 0
+    while counter < len(lines):
+        line = lines[counter]
+        if len(line) == 0:
+            counter += 1
+            continue
+
+        end_loc = -1
+        loc = find_next_special_char(line)
+        while loc >= 0:
+            loc += end_loc + 1
+            if line[loc] != '*':
+                end_loc = loc
+                loc = find_next_special_char(line[loc+1:])
+                continue
+            if counter == 0:
+                gear_ratio = determine_gear_ratio('.'*len(line), line, lines[counter+1], loc)
+            elif counter == len(lines)-1:
+                gear_ratio = determine_gear_ratio(lines[counter-1], line, '.'*len(line), loc)
+            else:
+                gear_ratio = determine_gear_ratio(lines[counter-1], line, lines[counter+1], loc)
+            
+            gear_sum += gear_ratio
+            end_loc = loc
+            loc = find_next_special_char(line[loc+1:])
+        
+        counter += 1
+    
+    print('The sum of gear ratios is', gear_sum)
+
+
+part2()
