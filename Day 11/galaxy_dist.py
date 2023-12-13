@@ -38,6 +38,24 @@ def expand_map(galaxy_map, empty_rows, empty_cols):
     
     return expanded_map
 
+def expand_map_pt2(galaxy_coords, empty_rows, empty_cols):
+    expanded_coords = []
+    constant = (10 ** 6) - 1
+    for (r, c) in galaxy_coords:
+        r_new, c_new = r, c
+        for k in empty_rows:
+            if r > k:
+                # print('r > k')
+                r_new += constant
+        for k in empty_cols:
+            if c > k:
+                # print('c > k')
+                c_new += constant
+        
+        expanded_coords.append((r_new, c_new))
+    
+    return expanded_coords
+
 def find_galaxies(galaxy_map):
     m, n = galaxy_map.shape
     galaxy_coords = []
@@ -47,9 +65,6 @@ def find_galaxies(galaxy_map):
                 galaxy_coords.append((r, c))
     
     return galaxy_coords
-
-def calc_distance(r1, c1, r2, c2):
-    return abs(r2-r1) + abs(c2-c1)
 
 def find_shortest_distance(galaxy_coords):
     sum = 0
@@ -81,5 +96,12 @@ def part2():
     chars = [list(line) for line in lines]
     galaxy_map = np.array(chars)
     galaxy_coords = find_galaxies(galaxy_map)
+    empty_rows, empty_cols = find_empty_lines(galaxy_map)
+    galaxy_coords = expand_map_pt2(galaxy_coords, empty_rows, empty_cols)
+    # print(galaxy_coords)
+    print(find_shortest_distance(galaxy_coords))
 
-part1()
+part2()
+# 86375060578 is too low
+# 86375146944 is too low
+# 458191688761
